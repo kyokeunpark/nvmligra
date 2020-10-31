@@ -128,6 +128,38 @@ graph(vertex* _V, long _n, long _m, Deletable* _D, uintE* _flags) : V(_V),
 };
 
 template <class vertex>
+struct nvmgraph {
+  vertex *V;
+  long n;
+  long m;
+  bool transposed;
+  uintE* flags;
+  Deletable *D;
+
+nvmgraph(vertex* _V, long _n, long _m, Deletable* _D) : V(_V), n(_n), m(_m),
+    D(_D), flags(NULL), transposed(0) {}
+
+nvmgraph(vertex* _V, long _n, long _m, Deletable* _D, uintE* _flags) : V(_V),
+    n(_n), m(_m), D(_D), flags(_flags), transposed(0) {}
+
+  void del() {
+    if (flags != NULL) free(flags);
+    D->del();
+    free(D);
+  }
+
+  void transpose() {
+    if ((sizeof(vertex) == sizeof(asymmetricVertex)) ||
+        (sizeof(vertex) == sizeof(compressedAsymmetricVertex))) {
+      parallel_for(long i = 0; i < n; i++) {
+        V[i].flipEdges();
+      }
+      transposed = !transposed;
+    }
+  }
+};
+
+template <class vertex>
 struct hypergraph {
   vertex *V;
   vertex *H;
