@@ -1,2 +1,3 @@
 .clangd
 cscope.*
+compile_commands.json

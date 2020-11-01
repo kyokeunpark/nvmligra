@@ -1,5 +1,8 @@
 #pragma once
 #include "IO.h"
+#include <libpmem.h>
+#include <libpmemobj++/make_persistent.hpp>
+#include <libpmemobj++/utils.hpp>
 
 using namespace std;
 
@@ -35,4 +38,139 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap) 
   long len = W.m - 1;
   long n = atol(W.Strings[1]);
   long m = atol(W.Strings[2]);
+#ifndef WEIGHTED
+  if (len != n + m + 2) {
+#else
+  if (len != n + 2*m + 2) {
+#endif
+    cout << "Bad input file" << endl;
+    abort();
+  }
+
+  // Allocating space for edges
+  // TODO: Use Pmem here
+  uintT* offsets = newA(uintT,n);
+#ifndef WEIGHTED
+  uintE* edges = newA(uintE, m);
+#else
+  intE* edges = newA(intE,2*m);
+#endif
+
+  // Retrieving offsets from file
+  {parallel_for(long i = 0; i < n; i++)
+      offsets[i] = atol(W.Strings[i + 3]);}
+  {parallel_for(long i = 0; i < m; i++) {
+#ifndef WEIGHTED
+      edges[i] = atol(W.Strings[i+n+3]);
+#else
+      edges[2*i] = atol(W.Strings[i+n+3]);
+      edges[2*i+1] = atol(W.Strings[i+n+m+3]);
+#endif
+    }}
+
+  // TODO: Use pmem here
+  vertex* v = newA(vertex,n);
+
+  {parallel_for (uintT i = 0; i < n; i++) {
+      uintT o = offsets[i];
+      uintT l = ((i == n - 1) ? m : offsets[i+1]) - offsets[i];
+      v[i].setOutDegree(l);
+#ifndef WEIGHTED
+      v[i].setOutNeighbors(edges + o);
+#else
+      v[i].setOutNeighbors(edges + 2 * o);
+#endif
+    }}
+
+  if (!isSymmetric) {
+    uintT* tOffsets = newA(uintT,n);
+    {parallel_for(long i = 0; i < n; i++)
+        tOffsets[i] = INT_T_MAX;}
+#ifndef WEIGHTED
+    intPair* temp = newA(intPair,m);
+#else
+    intTriple* temp = newA(intTriple,m);
+#endif
+    {parallel_for(long i = 0; i < n; i++) {
+        uintT o = offsets[i];
+        for(uintT j = 0; j < v[i].getOutDegree(); j++) {
+#ifndef WEIGHTED
+          temp[o+j] = make_pair(v[i].getOutNeighbor(j), i);
+#else
+          temp[o+j] = make_pair(v[i].getOutNeighbor(j), make_pair(i, v[i].getOutWeight(j)));
+#endif
+        }
+      }}
+    free(offsets);
+
+#ifndef WEIGHTED
+#ifndef LOWMEM
+    intSort::iSort(temp, m, n + 1, getFirst<uintE>());
+#else
+    quickSort(temp, m, pairFirstCmp<uintE>());
+#endif
+#else
+#ifndef LOWMEM
+    intSort::iSort(temp, m, n + 1, getFirst<intPair>());
+#else
+    quickSort(temp, m, pairFirstCmp<intPair>());
+#endif
+#endif
+
+    tOffsets[temp[0].first] = 0;
+#ifndef WEIGHTED
+    uintE* inEdges = newA(uintE,m);
+    inEdges[0] = temp[0].second;
+#else
+    intE* inEdges = newA(intE,2*m);
+    inEdges[0] = temp[0].second.first;
+    inEdges[1] = temp[0].second.second;
+#endif
+    {parallel_for(long i=1;i<m;i++) {
+#ifndef WEIGHTED
+      inEdges[i] = temp[i].second;
+#else
+      inEdges[2*i] = temp[i].second.first;
+      inEdges[2*i+1] = temp[i].second.second;
+#endif
+      if(temp[i].first != temp[i-1].first) {
+	tOffsets[temp[i].first] = i;
+      }
+      }}
+
+    free(temp);
+
+    //fill in offsets of degree 0 vertices by taking closest non-zero
+    //offset to the right
+    sequence::scanIBack(tOffsets,tOffsets,n,minF<uintT>(),(uintT)m);
+
+    {parallel_for(long i=0;i<n;i++){
+      uintT o = tOffsets[i];
+      uintT l = ((i == n-1) ? m : tOffsets[i+1])-tOffsets[i];
+      v[i].setInDegree(l);
+#ifndef WEIGHTED
+      v[i].setInNeighbors(inEdges+o);
+#else
+      v[i].setInNeighbors(inEdges+2*o);
+#endif
+      }}
+
+    free(tOffsets);
+    Uncompressed_Mem<vertex>* mem = new Uncompressed_Mem<vertex>(v,n,m,edges,inEdges);
+    return nvmgraph<vertex>(v,n,m,mem);
+  }
+  else {
+    free(offsets);
+    Uncompressed_Mem<vertex>* mem = new Uncompressed_Mem<vertex>(v,n,m,edges);
+    return nvmgraph<vertex>(v,n,m,mem);
+  }
+}
+
+template <class vertex>
+nvmgraph<vertex> readNvmGraph(char* iFile, bool compressed, bool symmetric, bool binary, bool mmap) {
+  if (binary) {
+    cerr << "NVM Graph for binary is not supported" << endl;
+    abort();
+  }
+  return readNvmgraphFromFile<vertex>(iFile, symmetric, mmap);
 }
