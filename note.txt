@@ -1,1 +1,3 @@
 newA is just a malloc and the macro is defined in utils.h (we could use something similar with the use of PMDK)
+
+main function is in ligra.h defined as "parallel_main"
