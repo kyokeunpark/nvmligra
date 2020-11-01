@@ -83,6 +83,15 @@ the program may improve performance for large graphs. For example:
 $ numactl -i all ./BFS -s <input file>
 ```
 
+NVM Optimized Graph
+--------
+This fork of Ligra can also utilize Intel's Persistent Memory (**WIP**).
+Examples of NVM-based Ligra application can be found in`/apps/nvm`
+directory. In order for these to compile, you would need the following
+as well as base dependency:
+
+- [PMDK](https://github.com/pmem/pmdk)
+- [C++ binding for libpmemobj](https://github.com/pmem/libpmemobj-cpp)
 
 Running code in Hygra
 -------
