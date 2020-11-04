@@ -167,7 +167,7 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap) 
 }
 
 template <class vertex>
-nvmgraph<vertex> readNvmGraph(char* iFile, bool compressed, bool symmetric, bool binary, bool mmap) {
+nvmgraph<vertex> readNvmGraph(char* iFile, bool compressed, bool symmetric, bool binary, bool mmap, char* pmem, size_t pmemsize) {
   if (binary) {
     cerr << "NVM Graph for binary is not supported" << endl;
     abort();

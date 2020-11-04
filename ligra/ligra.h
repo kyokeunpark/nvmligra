@@ -480,8 +480,17 @@ int parallel_main(int argc, char* argv[]) {
   bool compressed = P.getOptionValue("-c");
   bool binary = P.getOptionValue("-b");
   bool mmap = P.getOptionValue("-m");
-  //cout << "mmap = " << mmap << endl;
+  char* pmem = P.getOptionValue("-p");
+  size_t pmemsize = P.getOptionIntValue("-s", -1);
   long rounds = P.getOptionLongValue("-rounds",3);
+
+#ifdef NVM
+  if (pmem == NULL || pmemsize == -1) {
+    cerr << "NVM programs require -p and -s" << endl;
+    abort();
+  }
+#endif
+
   if (compressed) {
     if (symmetric) {
 #ifndef HYPER
@@ -489,11 +498,11 @@ int parallel_main(int argc, char* argv[]) {
       graph<compressedSymmetricVertex> G =
         readCompressedGraph<compressedSymmetricVertex>(iFile,symmetric,mmap); //symmetric graph
 #else
-      // TODO: Placeholder
-      nvmgraph<symmetricVertex> G =
-        readNvmGraph<symmetricVertex>(iFile,compressed,symmetric,binary,mmap);
       cerr << "Compressed vertex is not supported in NVM" << endl;
       abort();
+      // TODO: Placeholder
+      nvmgraph<symmetricVertex> G =
+        readNvmGraph<symmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize);
 #endif
 #else
       hypergraph<compressedSymmetricVertex> G =
@@ -512,11 +521,11 @@ int parallel_main(int argc, char* argv[]) {
       graph<compressedAsymmetricVertex> G =
         readCompressedGraph<compressedAsymmetricVertex>(iFile,symmetric,mmap); //asymmetric graph
 #else
-      // TODO: Placeholder
-      nvmgraph<asymmetricVertex> G =
-        readNvmGraph<asymmetricVertex>(iFile,compressed,symmetric,binary,mmap);
       cerr << "Compressed vertex is not supported in NVM" << endl;
       abort();
+      // TODO: Placeholder
+      nvmgraph<asymmetricVertex> G =
+        readNvmGraph<asymmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize);
 #endif
 #else
       hypergraph<compressedAsymmetricVertex> G =
@@ -540,7 +549,7 @@ int parallel_main(int argc, char* argv[]) {
         readGraph<symmetricVertex>(iFile,compressed,symmetric,binary,mmap); //symmetric graph
 #else
       nvmgraph<symmetricVertex> G =
-        readNvmGraph<symmetricVertex>(iFile,compressed,symmetric,binary,mmap);
+        readNvmGraph<symmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize);
 #endif
 #else
       hypergraph<symmetricVertex> G =
@@ -559,8 +568,10 @@ int parallel_main(int argc, char* argv[]) {
       graph<asymmetricVertex> G =
         readGraph<asymmetricVertex>(iFile,compressed,symmetric,binary,mmap); //asymmetric graph
 #else
+      // TODO: This is our main focus for the time being. If we have time for
+      //       other implementations, then we can.
       nvmgraph<asymmetricVertex> G =
-        readNvmGraph<asymmetricVertex>(iFile,compressed,symmetric,binary,mmap);
+        readNvmGraph<asymmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize); //asymmetric graph
 #endif
 #else
       hypergraph<asymmetricVertex> G =

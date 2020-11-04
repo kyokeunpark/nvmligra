@@ -40,6 +40,22 @@ public:
 };
 
 template <class vertex>
+struct Uncompressed_MemNVM : public Deletable {
+public:
+  vertex *V;
+  void *E;
+  long n;
+  long m;
+
+  Uncompressed_MemNVM(vertex *VV, void *EE, long nn, long mm) : V(VV), E(EE), n(nn), m(mm) { }
+
+  void del() {
+    free(V);
+    free(E);
+  }
+};
+
+template <class vertex>
 struct Uncompressed_Memhypergraph : public Deletable {
 public:
   vertex* V;

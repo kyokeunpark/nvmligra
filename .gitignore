@@ -1,3 +1,4 @@
 .clangd
+.editorconfig
 cscope.*
 compile_commands.json
