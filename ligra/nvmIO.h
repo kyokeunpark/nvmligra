@@ -7,8 +7,36 @@
 using namespace std;
 
 template <class vertex>
-nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap) {
+class PMemManager {
+  char *filename;
+  void *pmemaddr;
+  size_t size;
+  int is_pmem;
+
+public:
+  PMemManager(char *filename, size_t pmemsize)  {
+    if ((pmemaddr = pmem_map_file(filename, pmemsize, PMEM_FILE_CREATE, 0666, &size, &is_pmem)) == NULL) {
+      perror("pmem_map_file");
+      abort();
+    } else if (!is_pmem) {
+      cerr << "Warning: " << filename << " is not a persistent memory." << endl;
+    }
+  }
+
+  ~PMemManager() {
+    pmem_unmap(pmemaddr, size);
+  }
+
+  void allocate(void *object, size_t length) {
+    return;
+  }
+};
+
+template <class vertex>
+nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, char *pmemname, size_t pmemsize) {
   words W;
+  PMemManager<vertex> pmemmgr = PMemManager<vertex>(pmemname, pmemsize);
+
   if (mmap) {
     _seq<char> S = mmapStringFromFile(fname);
     char *bytes = newA(char, S.n);
@@ -27,11 +55,12 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap) 
     W = stringToWords(S.A, S.n);
   }
 #ifndef WEIGHTED
-  if (W.Strings[0] != (string) "Adjacencygraph") {
+  if (W.Strings[0] != (string) "AdjacencyGraph") {
 #else
-  if (W.Strings[0] != (string) "WeightedAdjacencygraph") {
+  if (W.Strings[0] != (string) "WeightedAdjacencyGraph") {
 #endif
     cout << "Bad input file" << endl;
+    cout << W.Strings[0] << endl;
     abort();
   }
 
@@ -172,5 +201,5 @@ nvmgraph<vertex> readNvmGraph(char* iFile, bool compressed, bool symmetric, bool
     cerr << "NVM Graph for binary is not supported" << endl;
     abort();
   }
-  return readNvmgraphFromFile<vertex>(iFile, symmetric, mmap);
+  return readNvmgraphFromFile<vertex>(iFile, symmetric, mmap, pmem, pmemsize);
 }

@@ -47,7 +47,8 @@ public:
   long n;
   long m;
 
-  Uncompressed_MemNVM(vertex *VV, void *EE, long nn, long mm) : V(VV), E(EE), n(nn), m(mm) { }
+  Uncompressed_MemNVM(vertex *VV, void *EE, long nn, long mm) : V(VV), E(EE), n(nn), m(mm) {
+  }
 
   void del() {
     free(V);

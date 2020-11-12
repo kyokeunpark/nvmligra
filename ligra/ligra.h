@@ -481,12 +481,12 @@ int parallel_main(int argc, char* argv[]) {
   bool binary = P.getOptionValue("-b");
   bool mmap = P.getOptionValue("-m");
   char* pmem = P.getOptionValue("-p");
-  size_t pmemsize = P.getOptionIntValue("-s", -1);
+  size_t pmemsize = P.getOptionLongValue("-S", 0);
   long rounds = P.getOptionLongValue("-rounds",3);
 
 #ifdef NVM
-  if (pmem == NULL || pmemsize == -1) {
-    cerr << "NVM programs require -p and -s" << endl;
+  if (!pmem || !pmemsize) {
+    cerr << "NVM programs require -p and -S" << endl;
     abort();
   }
 #endif
