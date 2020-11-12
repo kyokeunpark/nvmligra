@@ -27,9 +27,9 @@ void Compute(nvmgraph<vertex>& GA, commandLine P) {
   Parents[start] = start;
   vertexSubset Frontier(n,start); //creates initial frontier
   while(!Frontier.isEmpty()){ //loop until frontier is empty
-    vertexSubset output = edgeMap(GA, Frontier, BFS_F(Parents));
+    // vertexSubset output = edgeMap(GA, Frontier, BFS_F(Parents));
     Frontier.del();
-    Frontier = output; //set new frontier
+    // Frontier = output; //set new frontier
   }
   Frontier.del();
   free(Parents);

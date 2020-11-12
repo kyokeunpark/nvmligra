@@ -4,13 +4,15 @@
 #include <libpmemobj++/make_persistent.hpp>
 #include <libpmemobj++/utils.hpp>
 
+#define newP(__E,__n) (__E *) pmemmgr.allocate((__n) * sizeof(__E))
+
 using namespace std;
 
 template <class vertex>
 class PMemManager {
-  char *filename;
   void *pmemaddr;
   size_t size;
+  size_t allocated = 0;
   int is_pmem;
 
 public:
@@ -27,8 +29,11 @@ public:
     pmem_unmap(pmemaddr, size);
   }
 
-  void allocate(void *object, size_t length) {
-    return;
+  // TODO
+  void *allocate(size_t length) {
+    void *tmp = ((char *) pmemaddr + allocated);
+    allocated += length;
+    return tmp;
   }
 };
 
@@ -79,10 +84,13 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
   // Allocating space for edges
   // TODO: Use Pmem here
   uintT* offsets = newA(uintT,n);
+  // uintT* offsets = newP(uintT, n);
 #ifndef WEIGHTED
-  uintE* edges = newA(uintE, m);
+  // uintE* edges = newA(uintE, m);
+  uintE* edges = newP(uintE, m);
 #else
-  intE* edges = newA(intE,2*m);
+  // intE* edges = newA(intE,2*m);
+  intE* edges = newP(intE, 2*m);
 #endif
 
   // Retrieving offsets from file
@@ -97,7 +105,6 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
 #endif
     }}
 
-  // TODO: Use pmem here
   vertex* v = newA(vertex,n);
 
   {parallel_for (uintT i = 0; i < n; i++) {
@@ -148,10 +155,12 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
 
     tOffsets[temp[0].first] = 0;
 #ifndef WEIGHTED
-    uintE* inEdges = newA(uintE,m);
+    // uintE* inEdges = newA(uintE,m);
+    uintE* inEdges = newP(uintE, m);
     inEdges[0] = temp[0].second;
 #else
-    intE* inEdges = newA(intE,2*m);
+    // intE* inEdges = newA(intE,2*m);
+    intE* inEdges = newP(intE, 2*m);
     inEdges[0] = temp[0].second.first;
     inEdges[1] = temp[0].second.second;
 #endif

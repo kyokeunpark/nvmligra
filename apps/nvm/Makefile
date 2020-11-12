@@ -54,7 +54,7 @@ ALL= nvmBFS
 all: $(ALL)
 
 nvmBFS: nvmBFS.C $(COMMON)
-  $(PCC) $(PCFLAGS) -o $@ $< $(PLFLAGS)
+	$(PCC) $(PCFLAGS) -o $@ $< $(PLFLAGS)
 
 % : %.C $(COMMON)
 	$(PCC) $(PCFLAGS) -o $@ $<
