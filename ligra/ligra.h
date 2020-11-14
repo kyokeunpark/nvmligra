@@ -501,8 +501,8 @@ int parallel_main(int argc, char* argv[]) {
       cerr << "Compressed vertex is not supported in NVM" << endl;
       abort();
       // TODO: Placeholder
-      nvmgraph<symmetricVertex> G =
-        readNvmGraph<symmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize);
+      nvmgraph<nvmSymmetricVertex> G =
+        readNvmGraph<nvmSymmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize);
 #endif
 #else
       hypergraph<compressedSymmetricVertex> G =
@@ -524,8 +524,8 @@ int parallel_main(int argc, char* argv[]) {
       cerr << "Compressed vertex is not supported in NVM" << endl;
       abort();
       // TODO: Placeholder
-      nvmgraph<asymmetricVertex> G =
-        readNvmGraph<asymmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize);
+      nvmgraph<nvmAsymmetricVertex> G =
+        readNvmGraph<nvmAsymmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize);
 #endif
 #else
       hypergraph<compressedAsymmetricVertex> G =
@@ -548,8 +548,8 @@ int parallel_main(int argc, char* argv[]) {
       graph<symmetricVertex> G =
         readGraph<symmetricVertex>(iFile,compressed,symmetric,binary,mmap); //symmetric graph
 #else
-      nvmgraph<symmetricVertex> G =
-        readNvmGraph<symmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize);
+      nvmgraph<nvmSymmetricVertex> G =
+        readNvmGraph<nvmSymmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize);
 #endif
 #else
       hypergraph<symmetricVertex> G =
@@ -570,8 +570,8 @@ int parallel_main(int argc, char* argv[]) {
 #else
       // TODO: This is our main focus for the time being. If we have time for
       //       other implementations, then we can.
-      nvmgraph<asymmetricVertex> G =
-        readNvmGraph<asymmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize); //asymmetric graph
+      nvmgraph<nvmAsymmetricVertex> G =
+        readNvmGraph<nvmAsymmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize); //asymmetric graph
 #endif
 #else
       hypergraph<asymmetricVertex> G =
