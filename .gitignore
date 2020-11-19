@@ -5,3 +5,5 @@ compile_commands.json
 .cache
 package-lock.json
 node_modules
+dax_example/CMakeFiles/
+dax_example/CMakeCache.txt
