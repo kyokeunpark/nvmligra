@@ -1,0 +1,1 @@
+/usr/bin/c++    -rdynamic CMakeFiles/nvmtest.dir/main.cpp.o  -o nvmtest  -lpmem -lpmemobj 

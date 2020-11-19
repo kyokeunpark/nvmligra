@@ -3,3 +3,5 @@
 cscope.*
 compile_commands.json
 .cache
+package-lock.json
+node_modules

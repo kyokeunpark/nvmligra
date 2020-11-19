@@ -1,7 +1,8 @@
 #define NVM 1
 #include "ligra.h"
 #include "nvmIO.h"
-
+#include "nvmEdgeMapFunctions.h"
+#include "nvmNghFunctions.h"
 struct BFS_F {
   uintE* Parents;
   BFS_F(uintE* _Parents) : Parents(_Parents) {}
@@ -25,11 +26,11 @@ void Compute(nvmgraph<vertex>& GA, commandLine P) {
   uintE* Parents = newA(uintE,n);
   parallel_for(long i=0;i<n;i++) Parents[i] = UINT_E_MAX;
   Parents[start] = start;
-  vertexSubset Frontier(n,start); //creates initial frontier
+  nvmVertexSubset Frontier(n,start); //creates initial frontier
   while(!Frontier.isEmpty()){ //loop until frontier is empty
-    // vertexSubset output = edgeMap(GA, Frontier, BFS_F(Parents));
+    nvmVertexSubset output = nvmEdgeMap(GA, Frontier, BFS_F(Parents));
     Frontier.del();
-    // Frontier = output; //set new frontier
+    Frontier = output; //set new frontier
   }
   Frontier.del();
   free(Parents);

@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/reemo/Documents/nvmligra/dax_example/main.cpp
+iostream
+-
+cstdlib
+-
+sys/stat.h
+-
+sys/mman.h
+-
+string.h
+-
+fcntl.h
+-
+libpmem.h
+-
+errno.h
+-
+
