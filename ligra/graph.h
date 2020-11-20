@@ -6,8 +6,10 @@
 #include <libpmem.h>
 #include "vertex.h"
 #include "compressedVertex.h"
-#include "nvmVertex.h"
 #include "parallel.h"
+#ifdef NVM
+#include "nvmVertex.h"
+#endif
 using namespace std;
 
 // **************************************************************
@@ -175,7 +177,7 @@ public:
   }
 };
 
-
+#ifdef NVM
 template <class vertex>
 struct nvmgraph {
   vertex *V;
@@ -205,6 +207,7 @@ nvmgraph(vertex* _V, long _n, long _m, edge* _E, PMemManager* _mem) : V(_V), n(_
     }
   }
 };
+#endif
 
 template <class vertex>
 struct hypergraph {

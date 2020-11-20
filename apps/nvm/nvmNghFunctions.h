@@ -66,6 +66,33 @@ template <class vertex, class F, class G, class VS>
 inline void decodeInNghBreakEarly(long v_id, VS &vertexSubset, F &f,
                                   G &g, nvmgraph<vertex> GA,
                                   bool parallel = 0) {
+//   uintE d = GA.m;
+//   if (!parallel || d < 1000) {
+//     for (size_t j = 0; j < d; j++) {
+//       uintE ngh = GA.E[j].from;
+//       if (GA.E[j].to == v_id && vertexSubset.isIn(ngh)) {
+// #ifndef WEIGHTED
+//         auto m = f.update(ngh, v_id);
+// #else
+//         auto m = f.update(ngh, v_id, GA.E[j].weight);
+// #endif
+//         g(v_id, m);
+//       }
+//       // if (!f.cond(v_id)) break;
+//     }
+//   } else {
+//     parallel_for(size_t j = 0; j < d; j++) {
+//       uintE ngh = GA.E[j].from;
+//       if (GA.E[j].to == v_id && vertexSubset.isIn(ngh)) {
+// #ifndef WEIGHTED
+//         auto m = f.updateAtomic(ngh, v_id);
+// #else
+//         auto m = f.updateAtomic(ngh, v_id, GA.E[j].weight);
+// #endif
+//         g(v_id, m);
+//       }
+//     }
+//   }
   granular_for(j, 0, GA.m, (GA.m > 1000), {
     uintE ngh = GA.E[j].from;
     if(GA.E[j].to == v_id && vertexSubset.isIn(ngh)){

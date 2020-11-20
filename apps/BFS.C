@@ -41,16 +41,21 @@ template <class vertex>
 void Compute(graph<vertex>& GA, commandLine P) {
   long start = P.getOptionLongValue("-r",0);
   long n = GA.n;
+  long counter = 0;
   //creates Parents array, initialized to all -1, except for start
   uintE* Parents = newA(uintE,n);
   parallel_for(long i=0;i<n;i++) Parents[i] = UINT_E_MAX;
   Parents[start] = start;
   vertexSubset Frontier(n,start); //creates initial frontier
+  std::cout << *Frontier.s << std::endl;
   while(!Frontier.isEmpty()){ //loop until frontier is empty
     vertexSubset output = edgeMap(GA, Frontier, BFS_F(Parents));    
     Frontier.del();
     Frontier = output; //set new frontier
-  } 
+    std::cout << Frontier.s << " " << Frontier.m << " " << Frontier.dense() << std::endl;
+    counter++;
+  }
+  std::cout << "Counter: " << counter << std::endl;
   Frontier.del();
   free(Parents); 
 }

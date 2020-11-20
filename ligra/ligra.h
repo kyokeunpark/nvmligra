@@ -37,10 +37,13 @@
 #include "vertexSubset.h"
 #include "graph.h"
 #include "IO.h"
-#include "nvmIO.h"
 #include "parseCommandLine.h"
 #include "index_map.h"
 #include "edgeMap_utils.h"
+
+#ifdef NVM
+#include "nvmIO.h"
+#endif
 using namespace std;
 
 //*****START FRAMEWORK*****
@@ -70,6 +73,7 @@ vertexSubsetData<data> edgeMapDense(graph<vertex> GA, VS& vertexSubset, F &f, co
         G[v].decodeInNghBreakEarly(v, vertexSubset, f, g, fl & dense_parallel);
       }
     }
+    std::cout << "edgeMapDense: " << n << ", " << std::get<0>(*next) << std::endl;
     return vertexSubsetData<data>(n, next);
   } else {
     auto g = get_emdense_nooutput_gen<data>();
@@ -470,8 +474,10 @@ void Compute(graph<vertex>&, commandLine);
 template<class vertex>
 void Compute(hypergraph<vertex>&, commandLine);
 
+#ifdef NVM
 template<class vertex>
 void Compute(nvmgraph<vertex>&, commandLine);
+#endif
 
 int parallel_main(int argc, char* argv[]) {
   commandLine P(argc,argv," [-s] <inFile>");

@@ -139,6 +139,7 @@ nvmVertexSubsetData<data> nvmEdgeMapDense(nvmgraph<vertex> GA, VS& vertexSubset,
         decodeInNghBreakEarly( v, vertexSubset, f, g, GA, fl & dense_parallel);
       }
     }
+    std::cout << "edgeMapDense: " << n << ", " << std::get<0>(*next) << std::endl;
     return nvmVertexSubsetData<data>(n, next);
   } else {
     auto g = get_emdense_nooutput_gen<data>();
@@ -195,13 +196,23 @@ nvmVertexSubsetData<data> nvmEdgeMapData(nvmgraph<vertex>& GA, VS &vs, F f,
   uintT outDegrees = 0;
   if(threshold > 0) { //compute sum of out-degrees if threshold > 0 
     vs.toSparse();
+    /*
+     * FIXME: m = numEdges
+     *        Note that this will allocate (potentially) huge chunk of main
+     *        memory, which defeats the purpose of having edges stored in pmem
+     *        in the first place I think.
+     *
+     *        This ultimately won't be used with dense calculation, but might
+     *        still impact performance since it may allocate and then
+     *        deallocate later on.
+     */
     degrees = newA(uintT, m);
     frontierVertices = newA(vertex,m);
     {parallel_for (size_t i=0; i < m; i++) {
-	uintE v_id = vs.vtx(i);
-	vertex v = G[v_id];
-	degrees[i] = v.getOutDegree();
-	frontierVertices[i] = v;
+        uintE v_id = vs.vtx(i);
+        vertex v = G[v_id];
+        degrees[i] = v.getOutDegree();
+        frontierVertices[i] = v;
       }}
     outDegrees = sequence::plusReduce(degrees, m);
     if (outDegrees == 0) return nvmVertexSubsetData<data>(numVertices);
