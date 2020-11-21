@@ -2,8 +2,6 @@
 #include "IO.h"
 #include "nvmVertex.h"
 #include <libpmem.h>
-#include <libpmemobj++/make_persistent.hpp>
-#include <libpmemobj++/utils.hpp>
 
 #define newP(__E,__n) ((__E *) pmemmgr->allocate((__n) * sizeof(__E)))
 
