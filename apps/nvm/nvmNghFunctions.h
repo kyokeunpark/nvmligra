@@ -95,6 +95,7 @@ inline void decodeInNghBreakEarly(long v_id, VS &vertexSubset, F &f,
 //   }
   granular_for(j, 0, GA.m, (GA.m > 1000), {
     uintE ngh = GA.E[j].from;
+    //cout << GA.E[j].from << "to" << GA.E[j].to << endl;
     if(GA.E[j].to == v_id && vertexSubset.isIn(ngh)){
 #ifndef WEIGHTED
       auto m = f.updateAtomic(ngh, v_id);

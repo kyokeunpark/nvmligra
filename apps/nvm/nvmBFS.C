@@ -27,7 +27,7 @@ void Compute(nvmgraph<vertex>& GA, commandLine P) {
   uintE* Parents = newA(uintE,n);
   parallel_for(long i=0;i<n;i++) Parents[i] = UINT_E_MAX;
   Parents[start] = start;
-  nvmVertexSubset Frontier(n,start); //creates initial frontier
+  nvmVertexSubset Frontier(n, start); //creates initial frontier
   std::cout << *Frontier.s << std::endl;
   while(!Frontier.isEmpty()){ //loop until frontier is empty
     nvmVertexSubset output = nvmEdgeMap(GA, Frontier, BFS_F(Parents));

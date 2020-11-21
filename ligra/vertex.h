@@ -15,8 +15,10 @@ namespace decode_uncompressed {
     if (!parallel || d < 1000) {
       for (size_t j=0; j<d; j++) {
         uintE ngh = v->getInNeighbor(j);
+        //cout << v->getInNeighbor(j) << v_id << endl;
         if (vertexSubset.isIn(ngh)) {
 #ifndef WEIGHTED
+          //cout << "ngh" << ngh << endl;
           auto m = f.update(ngh, v_id);
 #else
           auto m = f.update(ngh, v_id, v->getInWeight(j));
@@ -30,6 +32,7 @@ namespace decode_uncompressed {
         uintE ngh = v->getInNeighbor(j);
         if (vertexSubset.isIn(ngh)) {
 #ifndef WEIGHTED
+          //cout << "ngh" << ngh << endl;
           auto m = f.updateAtomic(ngh, v_id);
 #else
           auto m = f.updateAtomic(ngh, v_id, v->getInWeight(j));
