@@ -151,7 +151,6 @@ struct nvmVertexSubsetData<pbbs::empty> {
     auto d_map = make_in_imap<size_t>(n, [&] (size_t i) { return get<0>(_d[i]); });
     auto f = [&] (size_t i, size_t j) { return i + j; };
     m = pbbs::reduce(d_map, f);
-    std::cout << "m = " << m << std::endl;
   }
 
   void del() {

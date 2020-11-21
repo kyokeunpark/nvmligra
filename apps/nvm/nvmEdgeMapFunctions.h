@@ -139,7 +139,6 @@ nvmVertexSubsetData<data> nvmEdgeMapDense(nvmgraph<vertex> GA, VS& vertexSubset,
         decodeInNghBreakEarly( v, vertexSubset, f, g, GA, fl & dense_parallel);
       }
     }
-    std::cout << "edgeMapDense: " << n << ", " << std::get<0>(*next) << std::endl;
     return nvmVertexSubsetData<data>(n, next);
   } else {
     auto g = get_emdense_nooutput_gen<data>();
@@ -194,7 +193,7 @@ nvmVertexSubsetData<data> nvmEdgeMapData(nvmgraph<vertex>& GA, VS &vs, F f,
   uintT* degrees = NULL;
   vertex* frontierVertices = NULL;
   uintT outDegrees = 0;
-  if(threshold > 0) { //compute sum of out-degrees if threshold > 0 
+  if(threshold > 0) { //compute sum of out-degrees if threshold > 0
     vs.toSparse();
     /*
      * FIXME: m = numEdges

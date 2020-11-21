@@ -65,13 +65,11 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
 
   {parallel_for (long i = 0; i < n; i++) {
     v[i].setOffset(offsets[i]);
-    //cout << "start from v" << i << endl;
     uintT l = ((i == n - 1) ? m : offsets[i + 1]) - offsets[i];
     v[i].setOutDegree(l);
     {parallel_for (long j = 0; j < l; j++) {
         uintT o = v[i].getOffset();
 #ifndef WEIGHTED
-        //cout << "edge" << i << "->" << W.Strings[j + o + n + 3] << endl;
         e[o + j] = edge(i, atol(W.Strings[j + o + n + 3]));
 #else
         e[o + j] = edge(i, atol(W.Strings[j + o + n + 3]), atol(W.Strings[j + n + o + m + 3]));
