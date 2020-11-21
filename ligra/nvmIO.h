@@ -75,8 +75,6 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
     }}
   }}
 
-  cout << e << endl;
-
   return nvmgraph<vertex>(v, n, m, e, pmemmgr);
 }
 
