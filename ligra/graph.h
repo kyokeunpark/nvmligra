@@ -2,7 +2,7 @@
 #define GRAPH_H
 #include <iostream>
 #include <fstream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <libpmem.h>
 #include "vertex.h"
 #include "compressedVertex.h"

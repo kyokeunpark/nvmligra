@@ -1,6 +1,7 @@
 #define NVM 1
 #include "ligra.h"
 #include "nvmIO.h"
+#include "nvmStream.h"
 #include "nvmEdgeMapFunctions.h"
 #include "nvmNghFunctions.h"
 struct BFS_F {
