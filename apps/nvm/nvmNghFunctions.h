@@ -1,5 +1,8 @@
    // Used by edgeMapSparse_no_filter. Sequentially decode the out-neighbors,
   // and compactly write all neighbors satisfying g().
+
+#pragma once
+
   template <class V, class F, class G, class vertex>
   inline size_t decodeOutNghSparseSeq(V* v, long i, uintT o, F &f, G &g, nvmgraph<vertex> GA) {
     uintE d = v->getOutDegree();
