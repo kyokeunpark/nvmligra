@@ -1,77 +1,57 @@
 #pragma once
 
 #include <cstdlib>
+#include <cstring>
+#include <map>
 #include "ligra.h"
 #include "nvmIO.h"
 
-/*
- * BST representation of edges that are cached in main memory
- *
- * TODO: Currently a simple BST implementation. This can be improved with
- *       self-balancing search tree, although currently not necessary.
- */
-template <class vertex>
-struct cachedEdge {
-  uintT v;
-  edge *e;
-  struct cachedEdge<vertex> *left, *right;
-
-public:
-  cachedEdge<vertex>(uintT _v, edge *_e, cachedEdge<vertex> *l, cachedEdge<vertex> *r)
-      : v(_v), e(_e), left(l), right(r) {}
-  cachedEdge<vertex>(uintT _v, edge *_e) : v(_v), e(_e) {
-    left = right = nullptr;
-  }
-
-  void addCachedEdge(cachedEdge<vertex> *n) {
-    cachedEdge<vertex> *node = this;
-    uintT v = n->v;
-
-    while (node != nullptr) {
-      if (node->v > v && node->left) {
-        node = node->left;
-      } else if (node->v > v) {
-        node->left = n;
-        break;
-      } else if (node->v < v && node->right) {
-        node = node->right;
-      } else {
-        node->right = n;
-        break;
-      }
-    }
-  }
-
-  cachedEdge<vertex> *searchEdge(uintT v) {
-    cachedEdge<vertex> *node = this;
-
-    while (node != nullptr) {
-      if (node->v == v)
-        return node;
-      else if (node->v > v)
-        node = node->left;
-      else
-        node = node->right;
-    }
-
-    return nullptr;
-  }
-
-};
-
 template <class vertex>
 class nvmStream {
+  /* Key = vertex id, Value = pointer to edge in DRAM */
+  using map = std::map<intT, edge *>;
+
   const size_t buffer_size;
-  edge *edges;
+  map cached;
+  char *cachedBitmap; /* Bitmap to show if vertex is cached */
+  edge *edges; /* Edge structs in pmem */
+  long m;
   void *bufaddr;
-  cachedEdge<vertex> *cached;
 
 public:
-  nvmStream(const size_t bufsize, edge *_e) : buffer_size(bufsize), edges(_e) {
+  nvmStream(const size_t bufsize, nvmgraph<vertex> &GA) : buffer_size(bufsize), edges(GA.E), m(GA.m) {
+    cachedBitmap = calloc(GA.n >> 3);
     bufaddr = malloc(buffer_size);
+    /* If we can fit entire edges data in given buffer size, do so. */
+    if (m * sizeof(edge) < buffer_size) {
+      memcpy(bufaddr, edges, m * sizeof(edge));
+      memset(cachedBitmap, ~0, GA.n >> 3);
+    }
   }
 
-  void *getBuffer() { return bufaddr; }
+  ~nvmStream() {
+    free(bufaddr);
+    free(cachedBitmap);
+  }
+
+  void fetchVertex(uintT vid, vertex *v) {
+    auto search = cached.find(vid);
+    if (search == cached.end()) {
+      // TODO: Add edges to the buffer and make it point to that instead
+      cached.emplace(vid, edges[v->getOffset()]);
+    }
+  }
+
+  void evictVertex(uintT vid) {
+    auto search = cached.find(vid);
+    if (search != cached.end()) {
+      // TODO: Free the cached edge (mark it as available)
+      cached.erase(search);
+    } else {
+      std::cerr << "nvmStream: received request to evict vertex that is not cached (vid = " << vid << ")" << std::endl;
+      abort(); // NOTE: It is possible that abort may not be necessary here.
+    }
+  }
 
   /*
    * Request to cache edges related to given vertex

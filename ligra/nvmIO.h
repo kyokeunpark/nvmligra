@@ -75,6 +75,8 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
     }}
   }}
 
+  cout << "Estimated vertex size: " << (sizeof(vertex) * 3774768) / (1024 * 1024) << " MB, Estimated edge size: " << (sizeof(edge) * 16518948) / (1024*1024) << " MB" << endl;
+
   return nvmgraph<vertex>(v, n, m, e, pmemmgr);
 }
 
