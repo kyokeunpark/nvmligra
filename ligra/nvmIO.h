@@ -130,12 +130,11 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
       }}
 
     free(tOffsets);
-    return nvmgraph<vertex>(v, n, m, e);
+    return nvmgraph<vertex>(v, n, m, e, pmemmgr);
   }
 
   free(offsets);
-  // return nvmgraph<vertex>(v, n, m, e, pmemmgr);
-  return nvmgraph<vertex>(v, n, m, e);
+  return nvmgraph<vertex>(v, n, m, e, pmemmgr);
 }
 
 template <class vertex>
