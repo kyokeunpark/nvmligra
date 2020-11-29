@@ -100,9 +100,28 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
       }}
     free(offsets);
 
+#ifndef WEIGHTED
+#ifndef LOWMEM
+    intSort::iSort(temp,m,n+1,getFirst<uintE>());
+#else
+    quickSort(temp,m,pairFirstCmp<uintE>());
+#endif
+#else
+#ifndef LOWMEM
+    intSort::iSort(temp,m,n+1,getFirst<intPair>());
+#else
+    quickSort(temp,m,pairFirstCmp<intPair>());
+#endif
+#endif
+
     tOffsets[temp[0].first] = 0;
     // TODO: Persistent memory here
     edge* inE = newP(edge, m);
+#ifndef WEIGHTED
+    inE[0] = edge(temp[0].first, temp[0].second);
+#else
+    inE[0] = edge(temp[0].first, temp[0].second.first, temp[0].second.second);
+#endif
     {parallel_for(long i = 1; i < m; i++) {
 #ifndef WEIGHTED
         inE[i] = edge(temp[i].first, temp[i].second);
@@ -122,11 +141,7 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
         uintT o = tOffsets[i];
         uintT l = ((i == n - 1) ? m : tOffsets[i + 1]) - tOffsets[i];
         v[i].setInDegree(l);
-#ifndef WEIGHTED
         v[i].setInNeighbors(inE + o);
-#else
-        v[i].setInNeighbors(inE + 2 * o);
-#endif
       }}
 
     free(tOffsets);
