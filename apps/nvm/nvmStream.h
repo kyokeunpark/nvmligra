@@ -145,7 +145,7 @@ public:
       if (needEviction())
         evict();
     } else {
-      eData dat = search.second;
+      eData dat = search->second;
       cached_list.renew(v);
     }
   }

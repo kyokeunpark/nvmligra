@@ -28,22 +28,22 @@ PMEMLIB = $(shell pkg-config --libs libpmem)
 #compilers
 ifdef CILK
 PCC = g++
-PCFLAGS = -std=c++14 -fcilkplus -lcilkrts -O3 -DCILK $(PMEMCXX) $(INTT) $(INTE) $(CODE) $(PD) $(MEM)
+PCFLAGS = -std=c++17 -fcilkplus -lcilkrts -O3 -DCILK $(PMEMCXX) $(INTT) $(INTE) $(CODE) $(PD) $(MEM)
 PLFLAGS = -fcilkplus -lcilkrts $(PMEMLIB)
 
 else ifdef MKLROOT
 PCC = icpc
-PCFLAGS = -std=c++14 -O3 -DCILKP $(PMEMCXX) $(INTT) $(INTE) $(CODE) $(PD) $(MEM)
+PCFLAGS = -std=c++17 -O3 -DCILKP $(PMEMCXX) $(INTT) $(INTE) $(CODE) $(PD) $(MEM)
 PLFLAGS = $(PMEMLIB)
 
 else ifdef OPENMP
 PCC = g++
-PCFLAGS = -std=c++14 -fopenmp -march=native -O3 -DOPENMP $(PMEMCXX) $(INTT) $(INTE) $(CODE) $(PD) $(MEM)
+PCFLAGS = -std=c++17 -fopenmp -march=native -O3 -DOPENMP $(PMEMCXX) $(INTT) $(INTE) $(CODE) $(PD) $(MEM)
 PLFLAGS = $(PMEMLIB)
 
 else
 PCC = g++
-PCFLAGS = -std=c++14 -O3 $(PMEMCXX) $(INTT) $(INTE) $(CODE) $(PD) $(MEM)
+PCFLAGS = -std=c++17 -O3 $(PMEMCXX) $(INTT) $(INTE) $(CODE) $(PD) $(MEM)
 PLFLAGS = $(PMEMLIB)
 endif
 

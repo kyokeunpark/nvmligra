@@ -169,6 +169,9 @@ public:
   void *allocate(size_t length) {
     void *tmp = ((char *) pmemaddr + allocated);
     allocated += length;
+    if (allocated > size) {
+      cerr << "Warning: Memory allocation exceeded pmem size" << endl;
+    }
     return tmp;
   }
 
@@ -190,11 +193,12 @@ struct nvmgraph {
 
 nvmgraph(vertex* _V, long _n, long _m, edge* _E, PMemManager* _mem) : V(_V), n(_n), m(_m),
     E(_E), mem(_mem), flags(NULL), transposed(0) {}
+nvmgraph(vertex* _V, long _n, long _m, edge* _E) : V(_V), n(_n), m(_m), E(_E), mem(NULL), flags(NULL), transposed(0) {}
 
 
   void del() {
     if (flags != NULL) free(flags);
-    mem->del();
+    if (mem) mem->del();
   }
 
   void transpose() {

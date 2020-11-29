@@ -2,7 +2,6 @@
 #include "ligra.h"
 #include "nvmIO.h"
 #include "nvmEdgeMapFunctions.h"
-#include "nvmNghFunctions.h"
 #include "nvmVertexMap.h"
 template <class vertex>
 struct PR_F {

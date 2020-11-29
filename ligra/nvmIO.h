@@ -1,6 +1,7 @@
 #pragma once
 #include "IO.h"
 #include "nvmVertex.h"
+#include "parallel.h"
 #include <libpmem.h>
 
 #define newP(__E,__n) ((__E *) pmemmgr->allocate((__n) * sizeof(__E)))
@@ -59,25 +60,82 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
       offsets[i] = atol(W.Strings[i + 3]);}
 
   vertex* v = newA(vertex, n);
+  // TODO: Persistent memory here
   edge* e = newP(edge, m);
 
-  {parallel_for (long i = 0; i < n; i++) {
-    v[i].setOffset(offsets[i]);
-    uintT l = ((i == n - 1) ? m : offsets[i + 1]) - offsets[i];
-    v[i].setOutDegree(l);
-    {parallel_for (long j = 0; j < l; j++) {
-        uintT o = v[i].getOffset();
+  {parallel_for (long i = 0; i < m; i++) {
 #ifndef WEIGHTED
-        e[o + j] = edge(i, atol(W.Strings[j + o + n + 3]));
+    e[i] = edge(i, atol(W.Strings[i + n + 3]));
 #else
-        e[o + j] = edge(i, atol(W.Strings[j + o + n + 3]), atol(W.Strings[j + n + o + m + 3]));
+    e[i] = edge(i, atol(W.Strings[i + n + 3]), atol(W.Strings[i + n + m + 3]));
 #endif
-    }}
   }}
 
-  cout << "Estimated vertex size: " << (sizeof(vertex) * 3774768) / (1024 * 1024) << " MB, Estimated edge size: " << (sizeof(edge) * 16518948) / (1024*1024) << " MB" << endl;
+  {parallel_for (uintT i = 0; i < n; i++) {
+    uintT o = offsets[i];
+    v[i].setOffset(o);
+    uintT l = ((i == n - 1) ? m : offsets[i + 1]) - offsets[i];
+    v[i].setOutDegree(l);
+    v[i].setOutNeighbors(e + o);
+    }}
 
-  return nvmgraph<vertex>(v, n, m, e, pmemmgr);
+  if(!isSymmetric) {
+    uintT* tOffsets = newA(uintT, n);
+    {parallel_for(long i = 0; i < n; i++) tOffsets[i] = INT_T_MAX;}
+
+#ifndef WEIGHTED
+    intPair* temp = newA(intPair, m);
+#else
+    intTriple* temp = newA(intTriple, m);
+#endif
+    {parallel_for(long i = 0; i < n; i++) {
+        uintT o = offsets[i];
+        for(uintT j = 0; j < v[i].getOutDegree(); j++) {
+#ifndef WEIGHTED
+          temp[o + j] = make_pair(v[i].getOutNeighbor(j).to, i);
+#else
+          temp[o + j] = make_pair(v[i].getOutNeighbor(j).to, make_pair(i, v[i].getOutWeight(j)));
+#endif
+        }
+      }}
+    free(offsets);
+
+    tOffsets[temp[0].first] = 0;
+    // TODO: Persistent memory here
+    edge* inE = newP(edge, m);
+    {parallel_for(long i = 1; i < m; i++) {
+#ifndef WEIGHTED
+        inE[i] = edge(temp[i].first, temp[i].second);
+#else
+        inE[i] = edge(temp[i].first, temp[i].second.first, temp[i].second.second);
+#endif
+        if (temp[i].first != temp[i - 1].first) {
+          tOffsets[temp[i].first] = i;
+        }
+      }}
+
+    free(temp);
+
+    sequence::scanIBack(tOffsets, tOffsets, n, minF<uintT>(), (uintT)m);
+
+    {parallel_for(long i = 0; i < n; i++) {
+        uintT o = tOffsets[i];
+        uintT l = ((i == n - 1) ? m : tOffsets[i + 1]) - tOffsets[i];
+        v[i].setInDegree(l);
+#ifndef WEIGHTED
+        v[i].setInNeighbors(inE + o);
+#else
+        v[i].setInNeighbors(inE + 2 * o);
+#endif
+      }}
+
+    free(tOffsets);
+    return nvmgraph<vertex>(v, n, m, e);
+  }
+
+  free(offsets);
+  // return nvmgraph<vertex>(v, n, m, e, pmemmgr);
+  return nvmgraph<vertex>(v, n, m, e);
 }
 
 template <class vertex>

@@ -3,7 +3,6 @@
 #include "nvmIO.h"
 #include "nvmStream.h"
 #include "nvmEdgeMapFunctions.h"
-#include "nvmNghFunctions.h"
 
 struct BFS_F {
   uintE* Parents;

@@ -17,14 +17,14 @@ nvmVertexSubsetData<data> nvmEdgeMapSparse(nvmgraph<vertex> GA, vertex* frontier
       uintT v = indices.vtx(i);
       uintT o = offsets[i];
       vertex vert = frontierVertices[i];
-      decodeOutNghSparse(&vert, v, o, f, g, GA);
+      decode_nvm::decodeOutNghSparse(&vert, v, o, f, g);
     }
   } else {
     auto g = get_emsparse_nooutput_gen<data>();
     parallel_for (size_t i = 0; i < m; i++) {
       uintT v = indices.vtx(i);
       vertex vert = frontierVertices[i];
-      decodeOutNghSparse(&vert, v, 0, f, g, GA);
+      decode_nvm::decodeOutNghSparse(&vert, v, 0, f, g);
     }
   }
 
@@ -83,7 +83,7 @@ nvmVertexSubsetData<data> nvmEdgeMapSparse_no_filter(nvmgraph<vertex>& GA,
       uintT k = start_o;
       for (size_t j=start; j<end; j++) {
         uintE v = indices.vtx(j);
-        size_t num_in = decodeOutNghSparseSeq(&frontierVertices[j], v, k, f, g, GA);
+        size_t num_in = decode_nvm::decodeOutNghSparseSeq<vertex>(&frontierVertices[j], v, k, f, g);
         k += num_in;
       }
       cts[i] = (k - start_o);
@@ -138,7 +138,7 @@ nvmVertexSubsetData<data> nvmEdgeMapDense(nvmgraph<vertex> GA, VS& vertexSubset,
     parallel_for (long v=0; v<n; v++) {
       std::get<0>(next[v]) = 0;
       if (f.cond(v)) {
-        decodeInNghBreakEarly( v, vertexSubset, f, g, GA, fl & dense_parallel);
+        G[v].decodeInNghBreakEarly(v, vertexSubset, f, g, fl & dense_parallel);
       }
     }
     return nvmVertexSubsetData<data>(n, next);
@@ -146,7 +146,7 @@ nvmVertexSubsetData<data> nvmEdgeMapDense(nvmgraph<vertex> GA, VS& vertexSubset,
     auto g = get_emdense_nooutput_gen<data>();
     parallel_for (long v=0; v<n; v++) {
       if (f.cond(v)) {
-        decodeInNghBreakEarly(v, vertexSubset, f, g, GA, fl & dense_parallel);
+        G[v].decodeInNghBreakEarly(v, vertexSubset, f, g, fl & dense_parallel);
       }
     }
     return nvmVertexSubsetData<data>(n);
@@ -163,7 +163,7 @@ nvmVertexSubsetData<data> nvmEdgeMapDenseForward(nvmgraph<vertex> GA, VS& vertex
     parallel_for(long i=0;i<n;i++) { std::get<0>(next[i]) = 0; }
     parallel_for (long i=0; i<n; i++) {
       if (vertexSubset.isIn(i)) {
-        decodeOutNgh(&G[i], i, f, g, GA);
+        G[i].decodeOutNgh(i, f, g);
       }
     }
     return nvmVertexSubsetData<data>(n, next);
@@ -171,7 +171,7 @@ nvmVertexSubsetData<data> nvmEdgeMapDenseForward(nvmgraph<vertex> GA, VS& vertex
     auto g = get_emdense_forward_nooutput_gen<data>();
     parallel_for (long i=0; i<n; i++) {
       if (vertexSubset.isIn(i)) {
-        decodeOutNgh(&G[i], i, f, g, GA);
+        G[i].decodeOutNgh(i, f, g);
       }
     }
     return nvmVertexSubsetData<data>(n);
