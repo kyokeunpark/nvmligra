@@ -22,6 +22,7 @@
 #ifndef _BENCH_GETTIME_INCLUDED
 #define _BENCH_GETTIME_INCLUDED
 
+#include <ctime>
 #include <stdlib.h>
 #include <sys/time.h>
 #include <iomanip>
@@ -32,16 +33,21 @@ struct timer {
   double lastTime;
   double totalWeight;
   bool on;
+  struct timespec tsp;
   struct timezone tzp;
   timer() {
     struct timezone tz = {0, 0};
+    struct timespec ts = {0, 0};
     totalTime=0.0; 
     totalWeight=0.0;
-    on=0; tzp = tz;}
+    on=0; tzp = tz; tsp = ts;}
+
   double getTime() {
     timeval now;
     gettimeofday(&now, &tzp);
-    return ((double) now.tv_sec) + ((double) now.tv_usec)/1000000.;
+    clock_gettime(CLOCK_MONOTONIC, &tsp);
+    //return ((double) now.tv_sec) + ((double) now.tv_usec)/1000000.;
+    return ((double) tsp.tv_sec) + ((double) tsp.tv_nsec)/1000000000.;
   }
   void start () {
     on = 1;
@@ -76,7 +82,7 @@ struct timer {
   }
 
   void reportT(double time) {
-    std::cout << std::setprecision(3) << time <<  std::endl;;
+    std::cout << std::setprecision(5) << time <<  std::endl;;
   }
 
   void reportTime(double time) {
