@@ -47,7 +47,7 @@ struct timer {
     gettimeofday(&now, &tzp);
     clock_gettime(CLOCK_MONOTONIC, &tsp);
     //return ((double) now.tv_sec) + ((double) now.tv_usec)/1000000.;
-    return ((double) tsp.tv_sec) + ((double) tsp.tv_nsec)/1000000000.;
+    return ((double) tsp.tv_sec * 1000) + ((double) tsp.tv_nsec)/1000000.;
   }
   void start () {
     on = 1;
@@ -74,6 +74,7 @@ struct timer {
 
   double next() {
     if (!on) return 0.0;
+    std::cout << "testing" << std::endl;
     double t = getTime();
     double td = t - lastTime;
     totalTime += td;
