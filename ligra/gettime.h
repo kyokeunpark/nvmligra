@@ -43,7 +43,6 @@ struct timer {
   double getTime() {
     timeval now;
     gettimeofday(&now, &tzp);
-    clock_gettime(CLOCK_MONOTONIC, &tsp);
     return ((double) now.tv_sec) + ((double) now.tv_usec)/1000000.;
   }
   void start () {
