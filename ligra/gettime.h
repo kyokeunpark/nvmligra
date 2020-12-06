@@ -33,21 +33,17 @@ struct timer {
   double lastTime;
   double totalWeight;
   bool on;
-  struct timespec tsp;
   struct timezone tzp;
   timer() {
     struct timezone tz = {0, 0};
-    struct timespec ts = {0, 0};
-    totalTime=0.0; 
+    totalTime=0.0;
     totalWeight=0.0;
-    on=0; tzp = tz; tsp = ts;}
+    on=0; tzp = tz;}
 
   double getTime() {
     timeval now;
     gettimeofday(&now, &tzp);
-    clock_gettime(CLOCK_MONOTONIC, &tsp);
-    //return ((double) now.tv_sec) + ((double) now.tv_usec)/1000000.;
-    return ((double) tsp.tv_sec * 1000) + ((double) tsp.tv_nsec)/1000000.;
+    return ((double) now.tv_sec) + ((double) now.tv_usec)/1000000.;
   }
   void start () {
     on = 1;

@@ -49,7 +49,7 @@ endif
 
 COMMON= ligra.h graph.h compressedVertex.h vertex.h utils.h IO.h parallel.h gettime.h index_map.h maybe.h sequence.h edgeMap_utils.h binary_search.h quickSort.h blockRadixSort.h transpose.h parseCommandLine.h byte.h byteRLE.h nibble.h byte-pd.h byteRLE-pd.h nibble-pd.h vertexSubset.h encoder.C decoder.C nvmIO.h nvmVertex.h
 
-ALL= nvmBFS nvmList nvmPageRank nvmMIS
+ALL= nvmBFS nvmList nvmPageRank nvmMIS nvmRadii
 
 all: $(ALL)
 
@@ -62,8 +62,10 @@ nvmList: nvmList.C $(COMMON)
 nvmPageRank: nvmPageRank.C $(COMMON)
 	$(PCC) $(PCFLAGS) -o $@ $< $(PLFLAGS)
 
-
 nvmMIS: nvmMIS.C $(COMMON)
+	$(PCC) $(PCFLAGS) -o $@ $< $(PLFLAGS)
+
+nvmRadii: nvmRadii.C $(COMMON)
 	$(PCC) $(PCFLAGS) -o $@ $< $(PLFLAGS)
 
 % : %.C $(COMMON)

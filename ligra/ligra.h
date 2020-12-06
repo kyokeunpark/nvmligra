@@ -43,7 +43,6 @@
 
 #ifdef NVM
 #include "nvmIO.h"
-#include "nvmStream.h"
 #endif
 using namespace std;
 
