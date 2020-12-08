@@ -70,7 +70,6 @@ struct timer {
 
   double next() {
     if (!on) return 0.0;
-    std::cout << "testing" << std::endl;
     double t = getTime();
     double td = t - lastTime;
     totalTime += td;
@@ -79,7 +78,7 @@ struct timer {
   }
 
   void reportT(double time) {
-    std::cout << std::setprecision(5) << time <<  std::endl;;
+    std::cout << std::setprecision(3) << time <<  std::endl;;
   }
 
   void reportTime(double time) {
