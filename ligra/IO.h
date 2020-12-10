@@ -69,7 +69,14 @@ struct words {
   words() {}
 words(char* C, long nn, char** S, long mm)
 : Chars(C), n(nn), Strings(S), m(mm) {}
-  void del() {free(Chars); free(Strings);}
+  void del() {
+    free(Chars);
+#ifndef NVM
+    free(Strings);
+#else
+    pmem_unmap(Strings, m * sizeof(char*));
+#endif
+  }
 };
 
 inline bool isSpace(char c) {

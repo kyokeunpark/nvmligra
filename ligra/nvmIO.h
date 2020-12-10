@@ -8,9 +8,34 @@
 
 using namespace std;
 
+// parallel code for converting a string to words
+words stringToWords(char *Str, long n, PMemManager* pmemmgr) {
+  {parallel_for (long i=0; i < n; i++)
+      if (isSpace(Str[i])) Str[i] = 0; }
+
+  // mark start of words
+  bool *FL = newA(bool,n);
+  FL[0] = Str[0];
+  {parallel_for (long i=1; i < n; i++) FL[i] = Str[i] && !Str[i-1];}
+
+  // offset for each start of word
+  _seq<long> Off = sequence::packIndex<long>(FL, n);
+  long m = Off.n;
+  long *offsets = Off.A;
+
+  // pointer to each start of word
+  char **SA = newP(char*, m);
+  {parallel_for (long j=0; j < m; j++) SA[j] = Str+offsets[j];}
+
+  free(offsets); free(FL);
+
+  return words(Str,n,SA,m);
+}
+
 template <class vertex>
 nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, char *pmemname, size_t pmemsize) {
   words W;
+  bool largeVertex = false;
   PMemManager* pmemmgr = new PMemManager(pmemname, pmemsize);
 
   if (mmap) {
@@ -25,10 +50,10 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
       exit(-1);
     }
     S.A = bytes;
-    W = stringToWords(S.A, S.n);
+    W = stringToWords(S.A, S.n, pmemmgr);
   } else {
     _seq<char> S = readStringFromFile(fname);
-    W = stringToWords(S.A, S.n);
+    W = stringToWords(S.A, S.n, pmemmgr);
   }
 #ifndef WEIGHTED
   if (W.Strings[0] != (string) "AdjacencyGraph") {
@@ -40,9 +65,9 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
     abort();
   }
 
-  long len = W.m - 1;
-  long n = atol(W.Strings[1]);
-  long m = atol(W.Strings[2]);
+  unsigned long len = W.m - 1;
+  unsigned long n = atol(W.Strings[1]);
+  unsigned long m = atol(W.Strings[2]);
 #ifndef WEIGHTED
   if (len != n + m + 2) {
 #else
@@ -56,11 +81,15 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
   uintT* offsets = newA(uintT,n);
 
   // Retrieving offsets from file
-  {parallel_for(long i = 0; i < n; i++)
+  {parallel_for(unsigned long i = 0; i < n; i++)
       offsets[i] = atol(W.Strings[i + 3]);}
 
   vertex* v = newA(vertex, n);
-  // TODO: Persistent memory here
+  // If it struggles to allocate to memory, place it in pmem instead
+  if (!v) {
+    v = newP(vertex, n);
+    largeVertex = true;
+  }
   edge* e = newP(edge, m);
 
   {parallel_for (long i = 0; i < m; i++) {
@@ -84,11 +113,11 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
     {parallel_for(long i = 0; i < n; i++) tOffsets[i] = INT_T_MAX;}
 
 #ifndef WEIGHTED
-    intPair* temp = newA(intPair, m);
+    intPair* temp = newP(intPair, m);
 #else
-    intTriple* temp = newA(intTriple, m);
+    intTriple* temp = newP(intTriple, m);
 #endif
-    {parallel_for(long i = 0; i < n; i++) {
+    {parallel_for(unsigned long i = 0; i < n; i++) {
         uintT o = offsets[i];
         for(uintT j = 0; j < v[i].getOutDegree(); j++) {
 #ifndef WEIGHTED
@@ -133,9 +162,16 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
         }
       }}
 
-    free(temp);
+#ifndef WEIGHTED
+    pmem_unmap(temp, sizeof(intPair) * m);
+#else
+    pmem_unmap(temp, sizeof(intTriple) * m);
+#endif
 
-    sequence::scanIBack(tOffsets, tOffsets, n, minF<uintT>(), (uintT)m);
+    if (largeVertex)
+      sequence::scanIBack(tOffsets, tOffsets, n, minF<uintT>(), (uintT)m, pmemmgr);
+    else
+      sequence::scanIBack(tOffsets, tOffsets, n, minF<uintT>(), (uintT)m);
 
     {parallel_for(long i = 0; i < n; i++) {
         uintT o = tOffsets[i];

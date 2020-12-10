@@ -26,6 +26,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
+#include "pmemmgr.h"
 #include "parallel.h"
 using namespace std;
 
@@ -43,6 +44,7 @@ typedef unsigned int uint;
 typedef unsigned long ulong;
 
 #define newA(__E,__n) (__E*) malloc((__n)*sizeof(__E))
+#define newP(__E,__n) ((__E *) pmemmgr->allocate((__n) * sizeof(__E)))
 
 template <class E>
 struct identityF { E operator() (const E& x) {return x;}};
@@ -169,15 +171,21 @@ namespace sequence {
   ET scanSerial(ET* Out, intT s, intT e, F f, G g, ET zero, bool inclusive, bool back) {
     ET r = zero;
     if (inclusive) {
-      if (back) for (intT i = e-1; i >= s; i--) Out[i] = r = f(r,g(i));
+      if (back)
+        for (intT i = e-1; i >= s; i--) {
+          if (i < 0 || i > e - 1) break;
+          Out[i] = r = f(r,g(i));
+        }
       else for (intT i = s; i < e; i++) Out[i] = r = f(r,g(i));
     } else {
-      if (back)
+      if (back) {
+        cout << e - 1 << endl;
 	for (intT i = e-1; i >= s; i--) {
+    if (i < 0 || i > e - 1) break;
 	  ET t = g(i);
 	  Out[i] = r;
 	  r = f(r,t);
-	}
+	}}
       else
 	for (intT i = s; i < e; i++) {
 	  ET t = g(i);
@@ -209,6 +217,21 @@ namespace sequence {
     return total;
   }
 
+  template <class ET, class intT, class F, class G>
+  ET scan(ET* Out, intT s, intT e, F f, G g,  ET zero, bool inclusive, bool back, PMemManager *pmemmgr) {
+    intT n = e-s;
+    intT l = nblocks(n,_SCAN_BSIZE);
+    if (l <= 2) return scanSerial(Out, s, e, f, g, zero, inclusive, back);
+    ET *Sums = newP(ET,nblocks(n,_SCAN_BSIZE));
+    blocked_for (i, s, e, _SCAN_BSIZE,
+		 Sums[i] = reduceSerial<ET>(s, e, f, g););
+    ET total = scan(Sums, (intT) 0, l, f, getA<ET,intT>(Sums), zero, false, back, pmemmgr);
+    blocked_for (i, s, e, _SCAN_BSIZE,
+		 scanSerial(Out, s, e, f, g, Sums[i], inclusive, back););
+    pmem_unmap(Sums, sizeof(ET) * nblocks(n,_SCAN_BSIZE));
+    return total;
+  }
+
   template <class ET, class intT, class F>
   ET scan(ET *In, ET* Out, intT n, F f, ET zero) {
     return scan(Out, (intT) 0, n, f, getA<ET,intT>(In), zero, false, false);}
@@ -224,6 +247,10 @@ namespace sequence {
   template <class ET, class intT, class F>
   ET scanIBack(ET *In, ET* Out, intT n, F f, ET zero) {
     return scan(Out, (intT) 0, n, f, getA<ET,intT>(In), zero, true, true);}
+
+  template <class ET, class intT, class F>
+  ET scanIBack(ET *In, ET* Out, intT n, F f, ET zero, PMemManager *pmemmgr) {
+    return scan(Out, (intT) 0, n, f, getA<ET,intT>(In), zero, true, true, pmemmgr);}
 
   template <class ET, class intT>
   ET plusScan(ET *In, ET* Out, intT n) {
