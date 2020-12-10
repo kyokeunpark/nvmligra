@@ -179,7 +179,6 @@ namespace sequence {
       else for (intT i = s; i < e; i++) Out[i] = r = f(r,g(i));
     } else {
       if (back) {
-        cout << e - 1 << endl;
 	for (intT i = e-1; i >= s; i--) {
     if (i < 0 || i > e - 1) break;
 	  ET t = g(i);
