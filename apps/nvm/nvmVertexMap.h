@@ -1,3 +1,4 @@
+#pragma once
 
 template <class F, class VS, typename std::enable_if<
   !std::is_same<VS, nvmVertexSubset>::value, int>::type=0 >

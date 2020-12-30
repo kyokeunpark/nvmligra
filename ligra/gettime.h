@@ -22,6 +22,7 @@
 #ifndef _BENCH_GETTIME_INCLUDED
 #define _BENCH_GETTIME_INCLUDED
 
+#include <ctime>
 #include <stdlib.h>
 #include <sys/time.h>
 #include <iomanip>
@@ -35,9 +36,10 @@ struct timer {
   struct timezone tzp;
   timer() {
     struct timezone tz = {0, 0};
-    totalTime=0.0; 
+    totalTime=0.0;
     totalWeight=0.0;
     on=0; tzp = tz;}
+
   double getTime() {
     timeval now;
     gettimeofday(&now, &tzp);

@@ -1,15 +1,41 @@
 #pragma once
 #include "IO.h"
 #include "nvmVertex.h"
+#include "parallel.h"
 #include <libpmem.h>
 
 #define newP(__E,__n) ((__E *) pmemmgr->allocate((__n) * sizeof(__E)))
 
 using namespace std;
 
+// parallel code for converting a string to words
+words stringToWords(char *Str, long n, PMemManager* pmemmgr) {
+  {parallel_for (long i=0; i < n; i++)
+      if (isSpace(Str[i])) Str[i] = 0; }
+
+  // mark start of words
+  bool *FL = newA(bool,n);
+  FL[0] = Str[0];
+  {parallel_for (long i=1; i < n; i++) FL[i] = Str[i] && !Str[i-1];}
+
+  // offset for each start of word
+  _seq<long> Off = sequence::packIndex<long>(FL, n);
+  long m = Off.n;
+  long *offsets = Off.A;
+
+  // pointer to each start of word
+  char **SA = newP(char*, m);
+  {parallel_for (long j=0; j < m; j++) SA[j] = Str+offsets[j];}
+
+  free(offsets); free(FL);
+
+  return words(Str,n,SA,m);
+}
+
 template <class vertex>
 nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, char *pmemname, size_t pmemsize) {
   words W;
+  bool largeVertex = false;
   PMemManager* pmemmgr = new PMemManager(pmemname, pmemsize);
 
   if (mmap) {
@@ -24,10 +50,10 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
       exit(-1);
     }
     S.A = bytes;
-    W = stringToWords(S.A, S.n);
+    W = stringToWords(S.A, S.n, pmemmgr);
   } else {
     _seq<char> S = readStringFromFile(fname);
-    W = stringToWords(S.A, S.n);
+    W = stringToWords(S.A, S.n, pmemmgr);
   }
 #ifndef WEIGHTED
   if (W.Strings[0] != (string) "AdjacencyGraph") {
@@ -39,9 +65,9 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
     abort();
   }
 
-  long len = W.m - 1;
-  long n = atol(W.Strings[1]);
-  long m = atol(W.Strings[2]);
+  unsigned long len = W.m - 1;
+  unsigned long n = atol(W.Strings[1]);
+  unsigned long m = atol(W.Strings[2]);
 #ifndef WEIGHTED
   if (len != n + m + 2) {
 #else
@@ -55,26 +81,110 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
   uintT* offsets = newA(uintT,n);
 
   // Retrieving offsets from file
-  {parallel_for(long i = 0; i < n; i++)
+  {parallel_for(unsigned long i = 0; i < n; i++)
       offsets[i] = atol(W.Strings[i + 3]);}
 
   vertex* v = newA(vertex, n);
+  // If it struggles to allocate to memory, place it in pmem instead
+  if (!v) {
+    v = newP(vertex, n);
+    largeVertex = true;
+  }
   edge* e = newP(edge, m);
 
-  {parallel_for (long i = 0; i < n; i++) {
-    v[i].setOffset(offsets[i]);
-    uintT l = ((i == n - 1) ? m : offsets[i + 1]) - offsets[i];
-    v[i].setOutDegree(l);
-    {parallel_for (long j = 0; j < l; j++) {
-        uintT o = v[i].getOffset();
+  {parallel_for (long i = 0; i < m; i++) {
 #ifndef WEIGHTED
-        e[o + j] = edge(i, atol(W.Strings[j + o + n + 3]));
+    e[i] = edge(i, atol(W.Strings[i + n + 3]));
 #else
-        e[o + j] = edge(i, atol(W.Strings[j + o + n + 3]), atol(W.Strings[j + n + o + m + 3]));
+    e[i] = edge(i, atol(W.Strings[i + n + 3]), atol(W.Strings[i + n + m + 3]));
 #endif
-    }}
   }}
 
+  {parallel_for (uintT i = 0; i < n; i++) {
+    uintT o = offsets[i];
+    v[i].setOffset(o);
+    uintT l = ((i == n - 1) ? m : offsets[i + 1]) - offsets[i];
+    v[i].setOutDegree(l);
+    v[i].setOutNeighbors(e + o);
+    }}
+
+  if(!isSymmetric) {
+    uintT* tOffsets = newA(uintT, n);
+    {parallel_for(long i = 0; i < n; i++) tOffsets[i] = INT_T_MAX;}
+
+#ifndef WEIGHTED
+    intPair* temp = newP(intPair, m);
+#else
+    intTriple* temp = newP(intTriple, m);
+#endif
+    {parallel_for(unsigned long i = 0; i < n; i++) {
+        uintT o = offsets[i];
+        for(uintT j = 0; j < v[i].getOutDegree(); j++) {
+#ifndef WEIGHTED
+          temp[o + j] = make_pair(v[i].getOutNeighbor(j).to, i);
+#else
+          temp[o + j] = make_pair(v[i].getOutNeighbor(j).to, make_pair(i, v[i].getOutWeight(j)));
+#endif
+        }
+      }}
+    free(offsets);
+
+#ifndef WEIGHTED
+#ifndef LOWMEM
+    intSort::iSort(temp,m,n+1,getFirst<uintE>());
+#else
+    quickSort(temp,m,pairFirstCmp<uintE>());
+#endif
+#else
+#ifndef LOWMEM
+    intSort::iSort(temp,m,n+1,getFirst<intPair>());
+#else
+    quickSort(temp,m,pairFirstCmp<intPair>());
+#endif
+#endif
+
+    tOffsets[temp[0].first] = 0;
+    // TODO: Persistent memory here
+    edge* inE = newP(edge, m);
+#ifndef WEIGHTED
+    inE[0] = edge(temp[0].first, temp[0].second);
+#else
+    inE[0] = edge(temp[0].first, temp[0].second.first, temp[0].second.second);
+#endif
+    {parallel_for(long i = 1; i < m; i++) {
+#ifndef WEIGHTED
+        inE[i] = edge(temp[i].first, temp[i].second);
+#else
+        inE[i] = edge(temp[i].first, temp[i].second.first, temp[i].second.second);
+#endif
+        if (temp[i].first != temp[i - 1].first) {
+          tOffsets[temp[i].first] = i;
+        }
+      }}
+
+#ifndef WEIGHTED
+    pmem_unmap(temp, sizeof(intPair) * m);
+#else
+    pmem_unmap(temp, sizeof(intTriple) * m);
+#endif
+
+    if (largeVertex)
+      sequence::scanIBack(tOffsets, tOffsets, n, minF<uintT>(), (uintT)m, pmemmgr);
+    else
+      sequence::scanIBack(tOffsets, tOffsets, n, minF<uintT>(), (uintT)m);
+
+    {parallel_for(long i = 0; i < n; i++) {
+        uintT o = tOffsets[i];
+        uintT l = ((i == n - 1) ? m : tOffsets[i + 1]) - tOffsets[i];
+        v[i].setInDegree(l);
+        v[i].setInNeighbors(inE + o);
+      }}
+
+    free(tOffsets);
+    return nvmgraph<vertex>(v, n, m, e, pmemmgr);
+  }
+
+  free(offsets);
   return nvmgraph<vertex>(v, n, m, e, pmemmgr);
 }
 

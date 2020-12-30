@@ -2,11 +2,12 @@
 #define GRAPH_H
 #include <iostream>
 #include <fstream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <libpmem.h>
 #include "vertex.h"
 #include "compressedVertex.h"
 #include "parallel.h"
+#include "pmemmgr.h"
 #ifdef NVM
 #include "nvmVertex.h"
 #endif
@@ -148,34 +149,6 @@ graph(vertex* _V, long _n, long _m, Deletable* _D, uintE* _flags) : V(_V),
   }
 };
 
-struct PMemManager : public Deletable {
-  void *pmemaddr;
-  size_t size;
-  size_t allocated = 0;
-  int is_pmem;
-
-public:
-  PMemManager(char *filename, size_t pmemsize)  {
-    if ((pmemaddr = pmem_map_file(filename, pmemsize, PMEM_FILE_CREATE, 0666, &size, &is_pmem)) == NULL) {
-      perror("pmem_map_file");
-      abort();
-    } else if (!is_pmem) {
-      cerr << "Warning: " << filename << " is not a persistent memory." << endl;
-    }
-  }
-
-  // TODO: Incredibly simple allocator currently.
-  //       Do we need something more complex?
-  void *allocate(size_t length) {
-    void *tmp = ((char *) pmemaddr + allocated);
-    allocated += length;
-    return tmp;
-  }
-
-  void del() {
-    pmem_unmap(pmemaddr, size);
-  }
-};
 
 #ifdef NVM
 template <class vertex>
@@ -190,11 +163,12 @@ struct nvmgraph {
 
 nvmgraph(vertex* _V, long _n, long _m, edge* _E, PMemManager* _mem) : V(_V), n(_n), m(_m),
     E(_E), mem(_mem), flags(NULL), transposed(0) {}
+nvmgraph(vertex* _V, long _n, long _m, edge* _E) : V(_V), n(_n), m(_m), E(_E), mem(NULL), flags(NULL), transposed(0) {}
 
 
   void del() {
     if (flags != NULL) free(flags);
-    mem->del();
+    if (mem) mem->del();
   }
 
   void transpose() {

@@ -2,7 +2,7 @@
 #include "ligra.h"
 #include "nvmIO.h"
 #include "nvmEdgeMapFunctions.h"
-#include "nvmNghFunctions.h"
+
 struct BFS_F {
   uintE* Parents;
   BFS_F(uintE* _Parents) : Parents(_Parents) {}
@@ -17,7 +17,6 @@ struct BFS_F {
   inline bool cond (uintE d) { return (Parents[d] == UINT_E_MAX); }
 };
 
-// TODO: Fix this to be actually work with NVM graph
 template <class vertex>
 void Compute(nvmgraph<vertex>& GA, commandLine P) {
   long start = P.getOptionLongValue("-r",0);
