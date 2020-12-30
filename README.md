@@ -27,6 +27,3 @@ Similar to other Ligra implementation, traversal applications can also pass
 the "-r" flags followed by an integer to indicate the source vertex.
 
 Note that all applications provided are only tested on Ubuntu 18.04 only.
-
-Acknowledgement
--------
