@@ -44,7 +44,22 @@ typedef unsigned int uint;
 typedef unsigned long ulong;
 
 #define newA(__E,__n) (__E*) malloc((__n)*sizeof(__E))
-#define newP(__E,__n) ((__E *) pmemmgr->allocate((__n) * sizeof(__E)))
+#define newP(__E,__n,__P) ((__E *) __P->allocate((__n) * sizeof(__E)))
+
+/*
+ * Was originally in ligra.h. Moved it to utils.h so that nvmEdgeMap.h can
+ * use it as well.
+ */
+typedef uint32_t flags;
+const flags no_output = 1;
+const flags pack_edges = 2;
+const flags sparse_no_filter = 4;
+const flags dense_forward = 8;
+const flags dense_parallel = 16;
+const flags remove_duplicates = 32;
+const flags no_dense = 64;
+const flags edge_parallel = 128;
+inline bool should_output(const flags& fl) { return !(fl & no_output); }
 
 template <class E>
 struct identityF { E operator() (const E& x) {return x;}};
@@ -221,7 +236,7 @@ namespace sequence {
     intT n = e-s;
     intT l = nblocks(n,_SCAN_BSIZE);
     if (l <= 2) return scanSerial(Out, s, e, f, g, zero, inclusive, back);
-    ET *Sums = newP(ET,nblocks(n,_SCAN_BSIZE));
+    ET *Sums = newP(ET,nblocks(n,_SCAN_BSIZE),pmemmgr);
     blocked_for (i, s, e, _SCAN_BSIZE,
 		 Sums[i] = reduceSerial<ET>(s, e, f, g););
     ET total = scan(Sums, (intT) 0, l, f, getA<ET,intT>(Sums), zero, false, back, pmemmgr);

@@ -1,7 +1,6 @@
 #define NVM 1
 #include <iostream>
 #include "ligra.h"
-#include "nvmIO.h"
 
 using namespace std;
 

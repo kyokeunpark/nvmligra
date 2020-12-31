@@ -1,3 +1,4 @@
+#define NVM 1
 #include "ligra.h"
 
 //For flags array to store status of each vertex
@@ -70,7 +71,7 @@ struct MIS_Filter {
 
 //Takes a symmetric graph as input; priority of a vertex is its ID.
 template <class vertex>
-void Compute(graph<vertex>& GA, commandLine P) {
+void Compute(nvmgraph<vertex>& GA, commandLine P) {
   const intE n = GA.n;
   bool checkCorrectness = P.getOptionValue("-checkCorrectness");
 
@@ -83,10 +84,10 @@ void Compute(graph<vertex>& GA, commandLine P) {
     frontier_data[i] = 1;
   }}
   long round = 0;
-  vertexSubset Frontier(n, frontier_data);
+  nvmVertexSubset Frontier(n, frontier_data);
   while (!Frontier.isEmpty()) {
-    edgeMap(GA, Frontier, MIS_Update(flags), -1, no_output);
-    vertexSubset output = vertexFilter(Frontier, MIS_Filter(flags));
+    nvmEdgeMap(GA, Frontier, MIS_Update(flags), -1, no_output);
+    nvmVertexSubset output = vertexFilter(Frontier, MIS_Filter(flags));
     Frontier.del();
     Frontier = output;
     round++;

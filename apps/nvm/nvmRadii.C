@@ -1,8 +1,6 @@
 #define NVM 1
 #include "ligra.h"
 #include "nvmIO.h"
-#include "nvmEdgeMapFunctions.h"
-#include "nvmVertexMap.h"
 
 //atomically do bitwise-OR of *a with b and store in location a
 template <class ET>

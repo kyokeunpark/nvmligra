@@ -41,23 +41,14 @@
 #include "index_map.h"
 #include "edgeMap_utils.h"
 
-#ifdef NVM
 #include "nvmIO.h"
-#endif
+#include "nvmEdgeMap.h"
+#include "nvmVertex.h"
+#include "nvmVertexMap.h"
+#include "nvmVertexSubset.h"
 using namespace std;
 
 //*****START FRAMEWORK*****
-
-typedef uint32_t flags;
-const flags no_output = 1;
-const flags pack_edges = 2;
-const flags sparse_no_filter = 4;
-const flags dense_forward = 8;
-const flags dense_parallel = 16;
-const flags remove_duplicates = 32;
-const flags no_dense = 64;
-const flags edge_parallel = 128;
-inline bool should_output(const flags& fl) { return !(fl & no_output); }
 
 template <class data, class vertex, class VS, class F>
 vertexSubsetData<data> edgeMapDense(graph<vertex> GA, VS& vertexSubset, F &f, const flags fl) {
@@ -497,18 +488,15 @@ int parallel_main(int argc, char* argv[]) {
 #endif
 
   if (compressed) {
+#ifdef NVM
+    cerr << "Compressed vertex is not supported in NVM" << endl;
+    abort();
+#endif
+
     if (symmetric) {
 #ifndef HYPER
-#ifndef NVM
       graph<compressedSymmetricVertex> G =
         readCompressedGraph<compressedSymmetricVertex>(iFile,symmetric,mmap); //symmetric graph
-#else
-      cerr << "Compressed vertex is not supported in NVM" << endl;
-      abort();
-      // TODO: Placeholder
-      nvmgraph<nvmSymmetricVertex> G =
-        readNvmGraph<nvmSymmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize);
-#endif
 #else
       hypergraph<compressedSymmetricVertex> G =
         readCompressedHypergraph<compressedSymmetricVertex>(iFile,symmetric,mmap); //symmetric graph
@@ -522,16 +510,8 @@ int parallel_main(int argc, char* argv[]) {
       G.del();
     } else {
 #ifndef HYPER
-#ifndef NVM
       graph<compressedAsymmetricVertex> G =
         readCompressedGraph<compressedAsymmetricVertex>(iFile,symmetric,mmap); //asymmetric graph
-#else
-      cerr << "Compressed vertex is not supported in NVM" << endl;
-      abort();
-      // TODO: Placeholder
-      nvmgraph<nvmAsymmetricVertex> G =
-        readNvmGraph<nvmAsymmetricVertex>(iFile,compressed,symmetric,binary,mmap,pmem,pmemsize);
-#endif
 #else
       hypergraph<compressedAsymmetricVertex> G =
         readCompressedHypergraph<compressedAsymmetricVertex>(iFile,symmetric,mmap); //asymmetric graph

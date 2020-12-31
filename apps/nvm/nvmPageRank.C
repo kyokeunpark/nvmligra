@@ -1,8 +1,6 @@
 #define NVM 1
 #include "ligra.h"
-#include "nvmIO.h"
-#include "nvmEdgeMapFunctions.h"
-#include "nvmVertexMap.h"
+
 template <class vertex>
 struct PR_F {
   double* p_curr, *p_next;

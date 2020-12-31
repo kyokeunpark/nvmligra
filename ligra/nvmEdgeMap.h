@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utils.h"
+
 template <class data, class vertex, class VS, class F>
 nvmVertexSubsetData<data> nvmEdgeMapSparse(nvmgraph<vertex> GA, vertex* frontierVertices, VS& indices,
         uintT* degrees, uintT m, F &f, const flags fl) {

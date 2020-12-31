@@ -1,5 +1,4 @@
 #pragma once
-#include "ligra.h"
 #include "nvmVertexSubset.h"
 
 struct edge {

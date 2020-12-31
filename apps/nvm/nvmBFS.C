@@ -1,7 +1,5 @@
 #define NVM 1
 #include "ligra.h"
-#include "nvmIO.h"
-#include "nvmEdgeMapFunctions.h"
 
 struct BFS_F {
   uintE* Parents;

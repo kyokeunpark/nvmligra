@@ -32,6 +32,6 @@ public:
   }
 
   void del() {
-    // pmem_unmap(pmemaddr, size);
+    pmem_unmap(pmemaddr, size);
   }
 };

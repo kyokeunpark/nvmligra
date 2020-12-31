@@ -4,8 +4,6 @@
 #include "parallel.h"
 #include <libpmem.h>
 
-#define newP(__E,__n) ((__E *) pmemmgr->allocate((__n) * sizeof(__E)))
-
 using namespace std;
 
 // parallel code for converting a string to words
@@ -24,7 +22,7 @@ words stringToWords(char *Str, long n, PMemManager* pmemmgr) {
   long *offsets = Off.A;
 
   // pointer to each start of word
-  char **SA = newP(char*, m);
+  char **SA = newP(char*, m, pmemmgr);
   {parallel_for (long j=0; j < m; j++) SA[j] = Str+offsets[j];}
 
   free(offsets); free(FL);
@@ -87,10 +85,10 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
   vertex* v = newA(vertex, n);
   // If it struggles to allocate to memory, place it in pmem instead
   if (!v) {
-    v = newP(vertex, n);
+    v = newP(vertex, n, pmemmgr);
     largeVertex = true;
   }
-  edge* e = newP(edge, m);
+  edge* e = newP(edge, m, pmemmgr);
 
   {parallel_for (long i = 0; i < m; i++) {
 #ifndef WEIGHTED
@@ -109,13 +107,15 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
     }}
 
   if(!isSymmetric) {
+    edge* inE = newP(edge, m, pmemmgr);
+
     uintT* tOffsets = newA(uintT, n);
     {parallel_for(long i = 0; i < n; i++) tOffsets[i] = INT_T_MAX;}
 
 #ifndef WEIGHTED
-    intPair* temp = newP(intPair, m);
+    intPair* temp = newP(intPair, m, pmemmgr);
 #else
-    intTriple* temp = newP(intTriple, m);
+    intTriple* temp = newP(intTriple, m, pmemmgr);
 #endif
     {parallel_for(unsigned long i = 0; i < n; i++) {
         uintT o = offsets[i];
@@ -144,8 +144,6 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
 #endif
 
     tOffsets[temp[0].first] = 0;
-    // TODO: Persistent memory here
-    edge* inE = newP(edge, m);
 #ifndef WEIGHTED
     inE[0] = edge(temp[0].first, temp[0].second);
 #else
@@ -161,12 +159,6 @@ nvmgraph<vertex> readNvmgraphFromFile(char* fname, bool isSymmetric, bool mmap, 
           tOffsets[temp[i].first] = i;
         }
       }}
-
-#ifndef WEIGHTED
-    pmem_unmap(temp, sizeof(intPair) * m);
-#else
-    pmem_unmap(temp, sizeof(intTriple) * m);
-#endif
 
     if (largeVertex)
       sequence::scanIBack(tOffsets, tOffsets, n, minF<uintT>(), (uintT)m, pmemmgr);
